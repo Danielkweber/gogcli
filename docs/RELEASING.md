@@ -6,6 +6,8 @@ summary: "Release checklist for gogcli (GitHub release + Homebrew tap)"
 
 This playbook mirrors the Homebrew + GitHub flow used in `../camsnap`.
 
+When Peter says “release fully” / “release including Homebrew”: do **all** steps below (CI + tag + GitHub release + tap update + Homebrew sanity install).
+
 Assumptions:
 - Repo: `steipete/gogcli`
 - Tap repo: `../homebrew-tap` (tap: `steipete/tap`)
@@ -20,6 +22,11 @@ Assumptions:
 ## 1) Verify build is green
 ```sh
 make ci
+```
+
+Optional: confirm GitHub Actions is green for the commit you’re tagging:
+```sh
+gh run list -L 5 --branch main
 ```
 
 ## 2) Update changelog
@@ -82,7 +89,11 @@ gog --help
 - Title: `gogcli X.Y.Z` (or `gog X.Y.Z` if you prefer the binary name).
 - Body: copy the bullets from `CHANGELOG.md` for that version.
 
+Tip (CLI):
+```sh
+gh release create vX.Y.Z --title "gogcli X.Y.Z" --notes-file /tmp/gogcli-release.md
+```
+
 ## Notes
 - `gog` currently does not print a version string; use tags + changelog as the source of truth.
 - If you later add `gog version`, update this doc to validate `gog version` post-install.
-
