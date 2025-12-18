@@ -103,7 +103,7 @@ Gmail:
 - `gog gmail attachment <messageId> <attachmentId> --out ./attachment.bin`
 - `gog gmail labels list`
 - `gog gmail labels get INBOX --output=json` (includes counts)
-- `gog gmail send --to a@b.com --subject "Hi" --body "Hello"`
+- `gog gmail send --to a@b.com --subject "Hi" --body "Plain fallback" --body-html "<p>Hello</p>"`
 
 Contacts:
 
