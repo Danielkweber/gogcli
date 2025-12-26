@@ -21,7 +21,7 @@ type rootFlags struct {
 	Plain   bool
 	Force   bool
 	NoInput bool
-	Debug   bool
+	Verbose bool
 }
 
 func Execute(args []string) error {
@@ -86,7 +86,7 @@ func Execute(args []string) error {
 	`),
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			logLevel := slog.LevelWarn
-			if flags.Debug {
+			if flags.Verbose {
 				logLevel = slog.LevelDebug
 			}
 			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
@@ -124,7 +124,9 @@ func Execute(args []string) error {
 	root.PersistentFlags().BoolVar(&flags.Plain, "plain", flags.Plain, "Output stable, parseable text to stdout (TSV; no colors)")
 	root.PersistentFlags().BoolVar(&flags.Force, "force", false, "Skip confirmations for destructive commands")
 	root.PersistentFlags().BoolVar(&flags.NoInput, "no-input", false, "Never prompt; fail instead (useful for CI)")
-	root.PersistentFlags().BoolVar(&flags.Debug, "debug", false, "Enable debug logging")
+	root.PersistentFlags().BoolVar(&flags.Verbose, "verbose", false, "Enable verbose logging")
+	root.PersistentFlags().BoolVar(&flags.Verbose, "debug", false, "Deprecated alias for --verbose")
+	_ = root.PersistentFlags().MarkHidden("debug")
 
 	root.AddCommand(newAuthCmd(&flags))
 	root.AddCommand(newDriveCmd(&flags))

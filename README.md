@@ -501,12 +501,12 @@ gog gmail batch label --query 'from:boss@example.com' --add-labels IMPORTANT
 
 ## Advanced Features
 
-### Debug Mode
+### Verbose Mode
 
-Enable verbose output for troubleshooting:
+Enable verbose logging for troubleshooting:
 
 ```bash
-gog --debug gmail search 'newer_than:7d'
+gog --verbose gmail search 'newer_than:7d'
 # Shows API requests and responses
 ```
 
@@ -520,7 +520,7 @@ All commands support these flags:
 - `--color <mode>` - Color mode: `auto`, `always`, or `never` (default: auto)
 - `--force` - Skip confirmations for destructive commands
 - `--no-input` - Never prompt; fail instead (useful for CI)
-- `--debug` - Enable debug logging
+- `--verbose` - Enable verbose logging
 - `--help` - Show help for any command
 
 ## Shell Completions

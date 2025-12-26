@@ -9,7 +9,7 @@
 - Calendar: colors, conflicts, search, multi-timezone time.
 - Sheets: read/write/update/append/clear + create spreadsheets.
 - Auth: browser-based accounts manager (`gog auth manage`).
-- DX: shell completion (`gog completion ...`) and `--debug` logging.
+- DX: shell completion (`gog completion ...`) and `--verbose` logging.
 
 ## 0.3.0 - 2025-12-26
 
