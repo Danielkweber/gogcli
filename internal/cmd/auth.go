@@ -504,7 +504,7 @@ func newAuthManageCmd() *cobra.Command {
 		Use:     "manage",
 		Aliases: []string{"login"},
 		Short:   "Open accounts manager in browser",
-		Long:    "Opens a browser-based UI to manage Google accounts, add new accounts, set defaults, and remove accounts.",
+		Long:    "Opens a browser-based UI to manage Google accounts, add new accounts, set defaults, and remove accounts.\n\nAlias: 'gog auth login' is equivalent to 'gog auth manage'.",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			var services []googleauth.Service
