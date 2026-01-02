@@ -237,7 +237,7 @@ func Authorize(ctx context.Context, opts AuthorizeOptions) (string, error) {
 			return "", errNoRefreshToken
 		}
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(shutdownCtx)
 
