@@ -191,6 +191,7 @@ func runWranglerCommandOutput(ctx context.Context, dir string, stdin io.Reader, 
 	cmd.Stdin = stdin
 
 	cmd.Env = append(os.Environ(), "WRANGLER_SEND_METRICS=false")
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(out), fmt.Errorf("wrangler %s failed: %w\n%s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
