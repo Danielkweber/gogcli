@@ -20,9 +20,9 @@ type SlidesCmd struct {
 }
 
 type SlidesExportCmd struct {
-	PresentationID string `arg:"" name:"presentationId" help:"Presentation ID"`
-	Out            string `name:"out" aliases:"output" help:"Output file path (default: gogcli config dir)"`
-	Format         string `name:"format" help:"Export format: pdf|pptx" default:"pptx"`
+	PresentationID string         `arg:"" name:"presentationId" help:"Presentation ID"`
+	Output         OutputPathFlag `embed:""`
+	Format         string         `name:"format" help:"Export format: pdf|pptx" default:"pptx"`
 }
 
 func (c *SlidesExportCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -31,7 +31,7 @@ func (c *SlidesExportCmd) Run(ctx context.Context, flags *RootFlags) error {
 		ExpectedMime:  "application/vnd.google-apps.presentation",
 		KindLabel:     "Google Slides presentation",
 		DefaultFormat: "pptx",
-	}, c.PresentationID, c.Out, c.Format)
+	}, c.PresentationID, c.Output.Path, c.Format)
 }
 
 type SlidesInfoCmd struct {

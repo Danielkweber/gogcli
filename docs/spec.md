@@ -125,6 +125,10 @@ Environment:
 - `GOG_KEYRING_BACKEND={auto|keychain|file}` (force backend; use `file` to avoid Keychain prompts and pair with `GOG_KEYRING_PASSWORD` for non-interactive)
 - `config.json` can also set `keyring_backend` (JSON5; env vars take precedence)
 
+Flag aliases:
+- `--out` also accepts `--output`.
+- `--out-dir` also accepts `--output-dir` (Gmail thread attachment downloads).
+
 ## Commands (current + planned)
 
 ### Implemented

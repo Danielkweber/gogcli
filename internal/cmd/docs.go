@@ -30,9 +30,9 @@ type DocsCmd struct {
 }
 
 type DocsExportCmd struct {
-	DocID  string `arg:"" name:"docId" help:"Doc ID"`
-	Out    string `name:"out" aliases:"output" help:"Output file path (default: gogcli config dir)"`
-	Format string `name:"format" help:"Export format: pdf|docx|txt" default:"pdf"`
+	DocID  string         `arg:"" name:"docId" help:"Doc ID"`
+	Output OutputPathFlag `embed:""`
+	Format string         `name:"format" help:"Export format: pdf|docx|txt" default:"pdf"`
 }
 
 func (c *DocsExportCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -41,7 +41,7 @@ func (c *DocsExportCmd) Run(ctx context.Context, flags *RootFlags) error {
 		ExpectedMime:  "application/vnd.google-apps.document",
 		KindLabel:     "Google Doc",
 		DefaultFormat: "pdf",
-	}, c.DocID, c.Out, c.Format)
+	}, c.DocID, c.Output.Path, c.Format)
 }
 
 type DocsInfoCmd struct {

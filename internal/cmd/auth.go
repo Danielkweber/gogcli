@@ -145,9 +145,9 @@ func (c *AuthTokensDeleteCmd) Run(ctx context.Context, flags *RootFlags) error {
 }
 
 type AuthTokensExportCmd struct {
-	Email     string `arg:"" name:"email" help:"Email"`
-	OutPath   string `name:"out" aliases:"output" help:"Output file path (required)"`
-	Overwrite bool   `name:"overwrite" help:"Overwrite output file if it exists"`
+	Email     string                 `arg:"" name:"email" help:"Email"`
+	Output    OutputPathRequiredFlag `embed:""`
+	Overwrite bool                   `name:"overwrite" help:"Overwrite output file if it exists"`
 }
 
 func (c *AuthTokensExportCmd) Run(ctx context.Context) error {
@@ -156,7 +156,7 @@ func (c *AuthTokensExportCmd) Run(ctx context.Context) error {
 	if email == "" {
 		return usage("empty email")
 	}
-	outPath := strings.TrimSpace(c.OutPath)
+	outPath := strings.TrimSpace(c.Output.Path)
 	if outPath == "" {
 		return usage("empty outPath")
 	}

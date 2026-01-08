@@ -17,10 +17,10 @@ import (
 )
 
 type GmailAttachmentCmd struct {
-	MessageID    string `arg:"" name:"messageId" help:"Message ID"`
-	AttachmentID string `arg:"" name:"attachmentId" help:"Attachment ID"`
-	Out          string `name:"out" aliases:"output" help:"Write to a specific path (default: gogcli config dir)"`
-	Name         string `name:"name" help:"Filename (only used when --out is empty)"`
+	MessageID    string         `arg:"" name:"messageId" help:"Message ID"`
+	AttachmentID string         `arg:"" name:"attachmentId" help:"Attachment ID"`
+	Output       OutputPathFlag `embed:""`
+	Name         string         `name:"name" help:"Filename (only used when --out is empty)"`
 }
 
 func (c *GmailAttachmentCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -40,7 +40,7 @@ func (c *GmailAttachmentCmd) Run(ctx context.Context, flags *RootFlags) error {
 		return err
 	}
 
-	if strings.TrimSpace(c.Out) == "" {
+	if strings.TrimSpace(c.Output.Path) == "" {
 		dir, dirErr := config.EnsureGmailAttachmentsDir()
 		if dirErr != nil {
 			return dirErr
@@ -71,7 +71,7 @@ func (c *GmailAttachmentCmd) Run(ctx context.Context, flags *RootFlags) error {
 		return nil
 	}
 
-	path, cached, bytes, err := downloadAttachmentToPath(ctx, svc, messageID, attachmentID, c.Out, -1)
+	path, cached, bytes, err := downloadAttachmentToPath(ctx, svc, messageID, attachmentID, c.Output.Path, -1)
 	if err != nil {
 		return err
 	}

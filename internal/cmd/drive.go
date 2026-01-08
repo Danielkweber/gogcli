@@ -245,9 +245,9 @@ func (c *DriveGetCmd) Run(ctx context.Context, flags *RootFlags) error {
 }
 
 type DriveDownloadCmd struct {
-	FileID string `arg:"" name:"fileId" help:"File ID"`
-	Out    string `name:"out" aliases:"output" help:"Output file path (default: gogcli config dir)"`
-	Format string `name:"format" help:"Export format for Google Docs files: pdf|csv|xlsx|pptx|txt|png|docx (default: auto)"`
+	FileID string         `arg:"" name:"fileId" help:"File ID"`
+	Output OutputPathFlag `embed:""`
+	Format string         `name:"format" help:"Export format for Google Docs files: pdf|csv|xlsx|pptx|txt|png|docx (default: auto)"`
 }
 
 func (c *DriveDownloadCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -279,7 +279,7 @@ func (c *DriveDownloadCmd) Run(ctx context.Context, flags *RootFlags) error {
 		return errors.New("file has no name")
 	}
 
-	destPath, err := resolveDriveDownloadDestPath(meta, c.Out)
+	destPath, err := resolveDriveDownloadDestPath(meta, c.Output.Path)
 	if err != nil {
 		return err
 	}

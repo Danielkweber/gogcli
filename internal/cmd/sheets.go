@@ -35,9 +35,9 @@ type SheetsCmd struct {
 }
 
 type SheetsExportCmd struct {
-	SpreadsheetID string `arg:"" name:"spreadsheetId" help:"Spreadsheet ID"`
-	Out           string `name:"out" aliases:"output" help:"Output file path (default: gogcli config dir)"`
-	Format        string `name:"format" help:"Export format: pdf|xlsx|csv" default:"xlsx"`
+	SpreadsheetID string         `arg:"" name:"spreadsheetId" help:"Spreadsheet ID"`
+	Output        OutputPathFlag `embed:""`
+	Format        string         `name:"format" help:"Export format: pdf|xlsx|csv" default:"xlsx"`
 }
 
 func (c *SheetsExportCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -47,7 +47,7 @@ func (c *SheetsExportCmd) Run(ctx context.Context, flags *RootFlags) error {
 		KindLabel:     "Google Sheet",
 		DefaultFormat: "xlsx",
 		FormatHelp:    "Export format: pdf|xlsx|csv",
-	}, c.SpreadsheetID, c.Out, c.Format)
+	}, c.SpreadsheetID, c.Output.Path, c.Format)
 }
 
 type SheetsCopyCmd struct {

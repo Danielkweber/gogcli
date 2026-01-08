@@ -231,6 +231,10 @@ Options:
 
 ## Commands
 
+Flag aliases:
+- `--out` also accepts `--output`.
+- `--out-dir` also accepts `--output-dir` (Gmail thread attachment downloads).
+
 ### Authentication
 
 ```bash

@@ -47,9 +47,10 @@ type GmailThreadCmd struct {
 }
 
 type GmailThreadGetCmd struct {
-	ThreadID string `arg:"" name:"threadId" help:"Thread ID"`
-	Download bool   `name:"download" help:"Download attachments"`
-	OutDir   string `name:"out-dir" aliases:"output-dir" help:"Directory to write attachments to (default: current directory)"`
+	ThreadID  string        `arg:"" name:"threadId" help:"Thread ID"`
+	Download  bool          `name:"download" help:"Download attachments"`
+	Full      bool          `name:"full" help:"Show full message bodies"`
+	OutputDir OutputDirFlag `embed:""`
 }
 
 func (c *GmailThreadGetCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -75,11 +76,11 @@ func (c *GmailThreadGetCmd) Run(ctx context.Context, flags *RootFlags) error {
 
 	var attachDir string
 	if c.Download {
-		if strings.TrimSpace(c.OutDir) == "" {
+		if strings.TrimSpace(c.OutputDir.Dir) == "" {
 			// Default: current directory, not gogcli config dir.
 			attachDir = "."
 		} else {
-			attachDir = filepath.Clean(c.OutDir)
+			attachDir = filepath.Clean(c.OutputDir.Dir)
 		}
 	}
 
@@ -153,7 +154,7 @@ func (c *GmailThreadGetCmd) Run(ctx context.Context, flags *RootFlags) error {
 			// Limit body preview to avoid overwhelming output
 			// Use runes to avoid breaking multi-byte UTF-8 characters
 			runes := []rune(cleanBody)
-			if len(runes) > 500 {
+			if len(runes) > 500 && !c.Full {
 				cleanBody = string(runes[:500]) + "... [truncated]"
 			}
 			u.Out().Println(cleanBody)
@@ -248,9 +249,9 @@ func (c *GmailThreadModifyCmd) Run(ctx context.Context, flags *RootFlags) error 
 
 // GmailThreadAttachmentsCmd lists all attachments in a thread.
 type GmailThreadAttachmentsCmd struct {
-	ThreadID string `arg:"" name:"threadId" help:"Thread ID"`
-	Download bool   `name:"download" help:"Download all attachments"`
-	OutDir   string `name:"out-dir" aliases:"output-dir" help:"Directory to write attachments to (default: current directory)"`
+	ThreadID  string        `arg:"" name:"threadId" help:"Thread ID"`
+	Download  bool          `name:"download" help:"Download all attachments"`
+	OutputDir OutputDirFlag `embed:""`
 }
 
 func (c *GmailThreadAttachmentsCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -287,10 +288,10 @@ func (c *GmailThreadAttachmentsCmd) Run(ctx context.Context, flags *RootFlags) e
 
 	var attachDir string
 	if c.Download {
-		if strings.TrimSpace(c.OutDir) == "" {
+		if strings.TrimSpace(c.OutputDir.Dir) == "" {
 			attachDir = "."
 		} else {
-			attachDir = filepath.Clean(c.OutDir)
+			attachDir = filepath.Clean(c.OutputDir.Dir)
 		}
 	}
 
