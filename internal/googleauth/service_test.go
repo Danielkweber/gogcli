@@ -282,6 +282,21 @@ func TestScopesForManageWithOptions_InvalidDriveScope(t *testing.T) {
 	}
 }
 
+func TestScopesForManageWithOptions_SheetsReadonlyIncludesDriveReadonly(t *testing.T) {
+	scopes, err := ScopesForManageWithOptions([]Service{ServiceSheets}, ScopeOptions{Readonly: true})
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if !containsScope(scopes, "https://www.googleapis.com/auth/spreadsheets.readonly") {
+		t.Fatalf("missing spreadsheets.readonly in %v", scopes)
+	}
+
+	if !containsScope(scopes, "https://www.googleapis.com/auth/drive.readonly") {
+		t.Fatalf("missing drive.readonly in %v", scopes)
+	}
+}
+
 func TestScopes_DocsIncludesDriveAndDocsScopes(t *testing.T) {
 	scopes, err := Scopes(ServiceDocs)
 	if err != nil {

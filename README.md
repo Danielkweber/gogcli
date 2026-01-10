@@ -232,7 +232,7 @@ Service scope matrix (auto-generated; run `go run scripts/gen-auth-services-md.g
 | docs | yes | Docs API, Drive API | `https://www.googleapis.com/auth/drive`<br>`https://www.googleapis.com/auth/documents` | Export/copy/create via Drive |
 | contacts | yes | People API | `https://www.googleapis.com/auth/contacts`<br>`https://www.googleapis.com/auth/contacts.other.readonly`<br>`https://www.googleapis.com/auth/directory.readonly` | Contacts + other contacts + directory |
 | tasks | yes | Tasks API | `https://www.googleapis.com/auth/tasks` |  |
-| sheets | yes | Sheets API, Drive API | `https://www.googleapis.com/auth/spreadsheets` | Export via Drive |
+| sheets | yes | Sheets API, Drive API | `https://www.googleapis.com/auth/drive`<br>`https://www.googleapis.com/auth/spreadsheets` | Export via Drive |
 | people | yes | People API | `profile` | OIDC profile scope |
 | groups | no | Cloud Identity API | `https://www.googleapis.com/auth/cloud-identity.groups.readonly` | Workspace only |
 | keep | no | Keep API | `https://www.googleapis.com/auth/keep` | Workspace only; service account |

@@ -119,10 +119,13 @@ var serviceInfoByService = map[Service]serviceInfo{
 		note:   "OIDC profile scope",
 	},
 	ServiceSheets: {
-		scopes: []string{"https://www.googleapis.com/auth/spreadsheets"},
-		user:   true,
-		apis:   []string{"Sheets API", "Drive API"},
-		note:   "Export via Drive",
+		scopes: []string{
+			"https://www.googleapis.com/auth/drive",
+			"https://www.googleapis.com/auth/spreadsheets",
+		},
+		user: true,
+		apis: []string{"Sheets API", "Drive API"},
+		note: "Export via Drive",
 	},
 	ServiceGroups: {
 		scopes: []string{"https://www.googleapis.com/auth/cloud-identity.groups.readonly"},
@@ -371,11 +374,12 @@ func scopesForServiceWithOptions(service Service, opts ScopeOptions) ([]string, 
 		// No read-only equivalent; profile is already read-ish.
 		return Scopes(service)
 	case ServiceSheets:
+		sheetsScope := "https://www.googleapis.com/auth/spreadsheets"
 		if opts.Readonly {
-			return []string{"https://www.googleapis.com/auth/spreadsheets.readonly"}, nil
+			sheetsScope = "https://www.googleapis.com/auth/spreadsheets.readonly"
 		}
 
-		return Scopes(service)
+		return []string{driveScopeValue(), sheetsScope}, nil
 	case ServiceGroups:
 		return Scopes(service)
 	case ServiceKeep:
