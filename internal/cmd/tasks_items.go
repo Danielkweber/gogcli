@@ -25,7 +25,7 @@ type TasksListCmd struct {
 	ShowCompleted bool   `name:"show-completed" help:"Include completed tasks (requires --show-hidden for some clients)" default:"true"`
 	ShowDeleted   bool   `name:"show-deleted" help:"Include deleted tasks"`
 	ShowHidden    bool   `name:"show-hidden" help:"Include hidden tasks"`
-	ShowAssigned  bool   `name:"show-assigned" help:"Include tasks assigned to current user"`
+	ShowAssigned  bool   `name:"show-assigned" help:"Include tasks assigned to current user" default:"true"`
 	DueMin        string `name:"due-min" help:"Lower bound for due date filter (RFC3339)"`
 	DueMax        string `name:"due-max" help:"Upper bound for due date filter (RFC3339)"`
 	CompletedMin  string `name:"completed-min" help:"Lower bound for completion date filter (RFC3339)"`
