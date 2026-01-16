@@ -5,6 +5,7 @@
 ### Fixed
 
 - Gmail: include `gmail.settings.sharing` scope for filter operations to avoid 403 insufficientPermissions. (#69) — thanks @ryanh-ai.
+- Gmail: resync on stale history 404s and skip missing message fetches without masking non-404 failures. (#70) — thanks @antons.
 
 ### Build
 

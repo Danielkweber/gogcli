@@ -113,11 +113,28 @@ func TestIsStaleHistoryError_MoreCases(t *testing.T) {
 	if !isStaleHistoryError(&googleapi.Error{Code: http.StatusBadRequest, Message: "History too old"}) {
 		t.Fatalf("expected stale history error")
 	}
+	if !isStaleHistoryError(&googleapi.Error{Code: http.StatusNotFound, Message: "Requested entity was not found."}) {
+		t.Fatalf("expected stale history error for not found")
+	}
 	if !isStaleHistoryError(errors.New("missing history")) {
 		t.Fatalf("expected stale history error from message")
 	}
 	if isStaleHistoryError(errors.New("other")) {
 		t.Fatalf("expected non-stale history error")
+	}
+}
+
+func TestIsNotFoundAPIError(t *testing.T) {
+	if !isNotFoundAPIError(&googleapi.Error{Code: http.StatusNotFound}) {
+		t.Fatalf("expected not found error")
+	}
+	if isNotFoundAPIError(&googleapi.Error{
+		Code: http.StatusForbidden,
+		Errors: []googleapi.ErrorItem{
+			{Reason: "notFound"},
+		},
+	}) {
+		t.Fatalf("expected non-notfound for forbidden")
 	}
 }
 
