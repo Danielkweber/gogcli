@@ -54,15 +54,49 @@ run_gmail_tests() {
   run_required "gmail" "gmail labels get" gog gmail labels get INBOX --json >/dev/null
 
   if ! skip "gmail-settings"; then
-    run_required "gmail" "gmail settings sendas list" gog gmail settings sendas list --json >/dev/null
+    local sendas_json sendas_email
+    echo "==> gmail settings sendas list"
+    sendas_json=$(gog gmail settings sendas list --json)
+    sendas_email=$(extract_field "$sendas_json" sendAsEmail)
+    if [ -n "$sendas_email" ]; then
+      run_required "gmail" "gmail settings sendas get" gog gmail settings sendas get "$sendas_email" --json >/dev/null
+    else
+      echo "==> gmail settings sendas get (skipped; no aliases)"
+    fi
     run_required "gmail" "gmail settings vacation get" gog gmail settings vacation get --json >/dev/null
     run_required "gmail" "gmail settings filters list" gog gmail settings filters list --json >/dev/null
     if is_consumer_account "$ACCOUNT"; then
       echo "==> gmail delegates (skipped; Workspace/SA only)"
     else
-      run_optional "gmail-delegates" "gmail settings delegates list" gog gmail settings delegates list --json >/dev/null
+      local delegates_json delegate_email
+      echo "==> gmail settings delegates list (optional)"
+      if delegates_json=$(gog gmail settings delegates list --json); then
+        echo "ok"
+      else
+        echo "skipped/failed"
+        if [ "${STRICT:-false}" = true ]; then
+          return 1
+        fi
+        delegates_json=""
+      fi
+      if [ -n "$delegates_json" ]; then
+        delegate_email=$(extract_field "$delegates_json" delegateEmail)
+        if [ -n "$delegate_email" ]; then
+          run_optional "gmail-delegates" "gmail settings delegates get" gog gmail settings delegates get "$delegate_email" --json >/dev/null
+        else
+          echo "==> gmail settings delegates get (skipped; no delegates)"
+        fi
+      fi
     fi
-    run_required "gmail" "gmail settings forwarding list" gog gmail settings forwarding list --json >/dev/null
+    local forwarding_json forwarding_email
+    echo "==> gmail settings forwarding list"
+    forwarding_json=$(gog gmail settings forwarding list --json)
+    forwarding_email=$(extract_field "$forwarding_json" forwardingEmail)
+    if [ -n "$forwarding_email" ]; then
+      run_required "gmail" "gmail settings forwarding get" gog gmail settings forwarding get "$forwarding_email" --json >/dev/null
+    else
+      echo "==> gmail settings forwarding get (skipped; no forwarding)"
+    fi
     run_required "gmail" "gmail settings autoforward get" gog gmail settings autoforward get --json >/dev/null
   fi
 
@@ -82,11 +116,19 @@ run_gmail_tests() {
   draft_json=$(gog gmail drafts create --to "$EMAIL_TEST" --subject "gogcli smoke draft $TS" --body "smoke draft" --json)
   draft_id=$(extract_field "$draft_json" draftId)
   [ -n "$draft_id" ] || { echo "Failed to parse draft id" >&2; exit 1; }
+  run_required "gmail" "gmail drafts list" gog gmail drafts list --json --max 1 >/dev/null
   run_required "gmail" "gmail drafts get" gog gmail drafts get "$draft_id" --json >/dev/null
   run_required "gmail" "gmail drafts update" gog gmail drafts update "$draft_id" --subject "gogcli smoke draft updated $TS" --body "updated" --json >/dev/null
   sent_draft_json=$(gog gmail drafts send "$draft_id" --json)
   sent_draft_msg_id=$(extract_field "$sent_draft_json" messageId)
   [ -n "$sent_draft_msg_id" ] || { echo "Failed to parse sent draft message id" >&2; exit 1; }
+
+  local delete_draft_json delete_draft_id
+  delete_draft_json=$(gog gmail drafts create --to "$EMAIL_TEST" --subject "gogcli smoke draft delete $TS" --body "delete" --json)
+  delete_draft_id=$(extract_field "$delete_draft_json" draftId)
+  if [ -n "$delete_draft_id" ]; then
+    run_required "gmail" "gmail drafts delete" gog --force gmail drafts delete "$delete_draft_id" --json >/dev/null
+  fi
 
   local body_file send_json send_msg_id send_thread_id
   body_file="$LIVE_TMP/gmail-body-$TS.txt"

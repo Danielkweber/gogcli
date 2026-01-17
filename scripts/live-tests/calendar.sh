@@ -44,9 +44,42 @@ PY
   run_required "calendar" "calendar delete event" gog calendar delete primary "$ev_id" --force >/dev/null
 
   if ! skip "calendar-enterprise"; then
-    run_optional "calendar-enterprise" "calendar focus-time" gog calendar create primary --event-type focus-time --from "$START" --to "$END" --json >/dev/null 2>&1 || true
-    run_optional "calendar-enterprise" "calendar out-of-office" gog calendar create primary --event-type out-of-office --from "$DAY1" --to "$DAY2" --all-day --json >/dev/null 2>&1 || true
-    run_optional "calendar-enterprise" "calendar working-location" gog calendar create primary --event-type working-location --working-location-type office --working-office-label "HQ" --from "$DAY1" --to "$DAY2" --json >/dev/null 2>&1 || true
+    local focus_json focus_id ooo_json ooo_id wl_json wl_id
+    focus_json=$(gog calendar create primary --event-type focus-time --from "$START" --to "$END" --json 2>/dev/null || true)
+    if [ -n "$focus_json" ]; then
+      focus_id=$(extract_id "$focus_json")
+    else
+      focus_id=""
+    fi
+    if [ -n "$focus_id" ]; then
+      run_optional "calendar-enterprise" "calendar delete focus-time" gog calendar delete primary "$focus_id" --force >/dev/null
+    else
+      echo "==> calendar focus-time (skipped/failed)"
+    fi
+
+    ooo_json=$(gog calendar create primary --event-type out-of-office --from "$DAY1" --to "$DAY2" --all-day --json 2>/dev/null || true)
+    if [ -n "$ooo_json" ]; then
+      ooo_id=$(extract_id "$ooo_json")
+    else
+      ooo_id=""
+    fi
+    if [ -n "$ooo_id" ]; then
+      run_optional "calendar-enterprise" "calendar delete out-of-office" gog calendar delete primary "$ooo_id" --force >/dev/null
+    else
+      echo "==> calendar out-of-office (skipped/failed)"
+    fi
+
+    wl_json=$(gog calendar create primary --event-type working-location --working-location-type office --working-office-label "HQ" --from "$DAY1" --to "$DAY2" --json 2>/dev/null || true)
+    if [ -n "$wl_json" ]; then
+      wl_id=$(extract_id "$wl_json")
+    else
+      wl_id=""
+    fi
+    if [ -n "$wl_id" ]; then
+      run_optional "calendar-enterprise" "calendar delete working-location" gog calendar delete primary "$wl_id" --force >/dev/null
+    else
+      echo "==> calendar working-location (skipped/failed)"
+    fi
   fi
 
   if [ -n "${GOG_LIVE_CALENDAR_RECURRENCE:-}" ]; then
