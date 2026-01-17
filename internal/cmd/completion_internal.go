@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/alecthomas/kong"
 )
@@ -16,82 +18,40 @@ type completionNode struct {
 	flags    map[string]completionFlag
 }
 
+var (
+	completionRootOnce sync.Once
+	completionRoot     *completionNode
+	completionRootErr  error
+)
+
 func completeWords(cword int, words []string) ([]string, error) {
 	if len(words) == 0 {
 		return nil, nil
 	}
-	parser, _, err := newParser(baseDescription())
+
+	root, err := completionRootNode()
 	if err != nil {
 		return nil, err
 	}
-	root := buildCompletionNode(parser.Model.Node)
 
-	if cword < 0 {
-		cword = len(words) - 1
-	}
+	cword = normalizeCword(cword, len(words))
 	if cword < 0 {
 		return nil, nil
 	}
-	if cword > len(words) {
-		cword = len(words)
-	}
 
-	start := 0
-	if isProgramName(words[0]) {
-		start = 1
-	}
+	start := completionStartIndex(words)
 
-	node := root
-	terminatorIndex := -1
-	for i := start; i < cword && i < len(words); {
-		word := words[i]
-		if word == "--" {
-			terminatorIndex = i
-			break
-		}
-		if strings.HasPrefix(word, "-") {
-			flagToken, hasValue := splitFlagToken(word)
-			if hasValue {
-				i++
-				continue
-			}
-			if spec, ok := node.flags[flagToken]; ok && spec.takesValue {
-				if i+1 == cword {
-					return nil, nil
-				}
-				i += 2
-				continue
-			}
-			i++
-			continue
-		}
-		if child, ok := node.children[word]; ok {
-			node = child
-			i++
-			continue
-		}
-		i++
-	}
-
-	if terminatorIndex != -1 && cword >= terminatorIndex {
+	node, terminatorIndex, needsValue := advanceCompletionNode(root, words, start, cword)
+	if needsValue {
 		return nil, nil
 	}
 
-	if cword < len(words) && words[cword] == "--" {
+	if shouldStopAfterTerminator(terminatorIndex, cword, words) {
 		return nil, nil
 	}
 
-	if cword > start && cword <= len(words) {
-		prev := words[cword-1]
-		if strings.HasPrefix(prev, "-") {
-			flagToken, hasValue := splitFlagToken(prev)
-			if hasValue {
-				return nil, nil
-			}
-			if spec, ok := node.flags[flagToken]; ok && spec.takesValue {
-				return nil, nil
-			}
-		}
+	if expectsFlagValue(node, cword, words, start) {
+		return nil, nil
 	}
 
 	current := ""
@@ -110,17 +70,107 @@ func completeWords(cword int, words []string) ([]string, error) {
 	return suggestions, nil
 }
 
-func isProgramName(word string) bool {
-	if word == "gog" {
+func completionRootNode() (*completionNode, error) {
+	completionRootOnce.Do(func() {
+		parser, _, err := newParser(baseDescription())
+		if err != nil {
+			completionRootErr = err
+			return
+		}
+		completionRoot = buildCompletionNode(parser.Model.Node)
+	})
+	return completionRoot, completionRootErr
+}
+
+func normalizeCword(cword int, wordCount int) int {
+	if cword < 0 {
+		cword = wordCount - 1
+	}
+	if cword < 0 {
+		return -1
+	}
+	if cword > wordCount {
+		cword = wordCount
+	}
+	return cword
+}
+
+func completionStartIndex(words []string) int {
+	if len(words) == 0 {
+		return 0
+	}
+	if isProgramName(words[0]) {
+		return 1
+	}
+	return 0
+}
+
+func advanceCompletionNode(root *completionNode, words []string, start int, cword int) (*completionNode, int, bool) {
+	node := root
+	terminatorIndex := -1
+	for i := start; i < cword && i < len(words); {
+		word := words[i]
+		if word == "--" {
+			terminatorIndex = i
+			break
+		}
+		if strings.HasPrefix(word, "-") {
+			flagToken, hasValue := splitFlagToken(word)
+			if hasValue {
+				i++
+				continue
+			}
+			if spec, ok := node.flags[flagToken]; ok && spec.takesValue {
+				if i+1 == cword {
+					return node, terminatorIndex, true
+				}
+				i += 2
+				continue
+			}
+			i++
+			continue
+		}
+		if child, ok := node.children[word]; ok {
+			node = child
+			i++
+			continue
+		}
+		i++
+	}
+
+	return node, terminatorIndex, false
+}
+
+func shouldStopAfterTerminator(terminatorIndex int, cword int, words []string) bool {
+	if terminatorIndex != -1 && cword >= terminatorIndex {
 		return true
 	}
-	if strings.HasSuffix(word, "/gog") || strings.HasSuffix(word, `\gog`) {
-		return true
-	}
-	if strings.HasSuffix(word, "/gog.exe") || strings.HasSuffix(word, `\gog.exe`) {
+	if cword < len(words) && words[cword] == "--" {
 		return true
 	}
 	return false
+}
+
+func expectsFlagValue(node *completionNode, cword int, words []string, start int) bool {
+	if cword <= start || cword > len(words) {
+		return false
+	}
+	prev := words[cword-1]
+	if strings.HasPrefix(prev, "-") {
+		flagToken, hasValue := splitFlagToken(prev)
+		if hasValue {
+			return true
+		}
+		if spec, ok := node.flags[flagToken]; ok && spec.takesValue {
+			return true
+		}
+	}
+	return false
+}
+
+func isProgramName(word string) bool {
+	base := filepath.Base(word)
+	return strings.EqualFold(base, "gog") || strings.EqualFold(base, "gog.exe")
 }
 
 func buildCompletionNode(node *kong.Node) *completionNode {
