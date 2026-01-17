@@ -5,6 +5,7 @@
 ### Added
 
 - Gmail: show attachment info (incl. humanized sizes) for `gmail get` full/metadata output, with JSON `sizeHuman`. (#83) — thanks @jeanregisser.
+- CLI: calendar propose-time, event types, tasks repeat + get, auth aliases, time now, enable-commands, and day-of-week JSON fields. (#75) — thanks @salmonumbrella.
 
 ### Fixed
 
@@ -15,6 +16,7 @@
 - Classroom: scan pages when filtering coursework/materials by topic. (#73) — thanks @salmonumbrella.
 - CLI: enable shell completions and stop flag suggestions after `--`. (#77) — thanks @salmonumbrella.
 - Timezone: honor `--timezone local` and allow env/config defaults for Gmail + Calendar output. (#79) — thanks @salmonumbrella.
+- Calendar/Tasks: propose-time decline sends updates and repeat-until keeps due time. (#75) — thanks @salmonumbrella.
 
 ### Build
 

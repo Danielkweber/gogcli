@@ -20,6 +20,7 @@ type CalendarCmd struct {
 	Delete          CalendarDeleteCmd          `cmd:"" name:"delete" help:"Delete an event"`
 	FreeBusy        CalendarFreeBusyCmd        `cmd:"" name:"freebusy" help:"Get free/busy"`
 	Respond         CalendarRespondCmd         `cmd:"" name:"respond" help:"Respond to an event invitation"`
+	ProposeTime     CalendarProposeTimeCmd     `cmd:"" name:"propose-time" help:"Generate URL to propose a new meeting time (browser-only feature)"`
 	Colors          CalendarColorsCmd          `cmd:"" name:"colors" help:"Show calendar colors"`
 	Conflicts       CalendarConflictsCmd       `cmd:"" name:"conflicts" help:"Find conflicts"`
 	Search          CalendarSearchCmd          `cmd:"" name:"search" help:"Search events"`
@@ -215,7 +216,7 @@ func (c *CalendarEventCmd) Run(ctx context.Context, flags *RootFlags) error {
 		return err
 	}
 	if outfmt.IsJSON(ctx) {
-		return outfmt.WriteJSON(os.Stdout, map[string]any{"event": event})
+		return outfmt.WriteJSON(os.Stdout, map[string]any{"event": wrapEventWithDays(event)})
 	}
 	printCalendarEvent(u, event)
 	return nil
