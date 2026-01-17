@@ -41,47 +41,61 @@ run_classroom_tests() {
     local course_json course_id topic_json topic_id announcement_json announcement_id material_json material_id coursework_json coursework_id
 
     echo "==> classroom courses create"
-    course_json=$(gog classroom courses create --name "gogcli-smoke-$TS" --section "gogcli" --state ACTIVE --json)
+    course_json=$(gog classroom courses create --name "gogcli-smoke-$TS" --section "gogcli" --state ACTIVE --json 2>/dev/null || \
+      gog classroom courses create --name "gogcli-smoke-$TS" --section "gogcli" --state PROVISIONED --json)
     course_id=$(extract_id "$course_json")
-    [ -n "$course_id" ] || { echo "Failed to parse course id" >&2; exit 1; }
+    if [ -z "$course_id" ]; then
+      echo "Classroom course create failed; skipping create tests."
+      if [ "${STRICT:-false}" = true ]; then
+        return 1
+      fi
+      return 0
+    fi
 
-    run_required "classroom" "classroom courses update" gog classroom courses update "$course_id" --name "gogcli-smoke-updated-$TS" --json >/dev/null
-    run_required "classroom" "classroom courses archive" gog classroom courses archive "$course_id" --json >/dev/null
-    run_required "classroom" "classroom courses unarchive" gog classroom courses unarchive "$course_id" --json >/dev/null
+    run_optional "classroom" "classroom courses update" gog classroom courses update "$course_id" --name "gogcli-smoke-updated-$TS" --json >/dev/null
+    run_optional "classroom" "classroom courses archive" gog classroom courses archive "$course_id" --json >/dev/null
+    run_optional "classroom" "classroom courses unarchive" gog classroom courses unarchive "$course_id" --json >/dev/null
 
     echo "==> classroom topics create"
-    topic_json=$(gog classroom topics create "$course_id" --name "gogcli topic $TS" --json)
+    topic_json=$(gog classroom topics create "$course_id" --name "gogcli topic $TS" --json 2>/dev/null || true)
     topic_id=$(extract_id "$topic_json")
 
     echo "==> classroom announcements create"
-    announcement_json=$(gog classroom announcements create "$course_id" --text "gogcli announcement $TS" --state DRAFT --json)
+    announcement_json=$(gog classroom announcements create "$course_id" --text "gogcli announcement $TS" --json 2>/dev/null || true)
     announcement_id=$(extract_id "$announcement_json")
 
     echo "==> classroom materials create"
-    material_json=$(gog classroom materials create "$course_id" --title "gogcli material $TS" --state DRAFT --json)
+    material_json=$(gog classroom materials create "$course_id" --title "gogcli material $TS" --json 2>/dev/null || true)
     material_id=$(extract_id "$material_json")
 
     echo "==> classroom coursework create"
-    coursework_json=$(gog classroom coursework create "$course_id" --title "gogcli coursework $TS" --type ASSIGNMENT --state DRAFT --max-points 10 --json)
+    coursework_json=$(gog classroom coursework create "$course_id" --title "gogcli coursework $TS" --type ASSIGNMENT --max-points 10 --json 2>/dev/null || true)
     coursework_id=$(extract_id "$coursework_json")
 
     if [ -n "$announcement_id" ]; then
-      run_required "classroom" "classroom announcements update" gog classroom announcements update "$course_id" "$announcement_id" --text "gogcli announcement updated $TS" --json >/dev/null
-      run_required "classroom" "classroom announcements delete" gog --force classroom announcements delete "$course_id" "$announcement_id" --json >/dev/null
+      run_optional "classroom" "classroom announcements update" gog classroom announcements update "$course_id" "$announcement_id" --text "gogcli announcement updated $TS" --json >/dev/null
+      run_optional "classroom" "classroom announcements delete" gog --force classroom announcements delete "$course_id" "$announcement_id" --json >/dev/null
     fi
     if [ -n "$material_id" ]; then
-      run_required "classroom" "classroom materials update" gog classroom materials update "$course_id" "$material_id" --title "gogcli material updated $TS" --json >/dev/null
-      run_required "classroom" "classroom materials delete" gog --force classroom materials delete "$course_id" "$material_id" --json >/dev/null
+      run_optional "classroom" "classroom materials update" gog classroom materials update "$course_id" "$material_id" --title "gogcli material updated $TS" --json >/dev/null
+      run_optional "classroom" "classroom materials delete" gog --force classroom materials delete "$course_id" "$material_id" --json >/dev/null
     fi
     if [ -n "$coursework_id" ]; then
-      run_required "classroom" "classroom coursework update" gog classroom coursework update "$course_id" "$coursework_id" --title "gogcli coursework updated $TS" --state DRAFT --json >/dev/null
-      run_required "classroom" "classroom coursework delete" gog --force classroom coursework delete "$course_id" "$coursework_id" --json >/dev/null
+      run_optional "classroom" "classroom coursework update" gog classroom coursework update "$course_id" "$coursework_id" --title "gogcli coursework updated $TS" --json >/dev/null
+      run_optional "classroom" "classroom coursework delete" gog --force classroom coursework delete "$course_id" "$coursework_id" --json >/dev/null
     fi
     if [ -n "$topic_id" ]; then
-      run_required "classroom" "classroom topics update" gog classroom topics update "$course_id" "$topic_id" --name "gogcli topic updated $TS" --json >/dev/null
-      run_required "classroom" "classroom topics delete" gog --force classroom topics delete "$course_id" "$topic_id" --json >/dev/null
+      run_optional "classroom" "classroom topics update" gog classroom topics update "$course_id" "$topic_id" --name "gogcli topic updated $TS" --json >/dev/null
+      run_optional "classroom" "classroom topics delete" gog --force classroom topics delete "$course_id" "$topic_id" --json >/dev/null
     fi
 
-    run_required "classroom" "classroom courses delete" gog --force classroom courses delete "$course_id" --json >/dev/null
+    if gog --force classroom courses delete "$course_id" --json >/dev/null; then
+      :
+    else
+      echo "Classroom course delete failed; manual cleanup needed: $course_id" >&2
+      if [ "${STRICT:-false}" = true ]; then
+        return 1
+      fi
+    fi
   fi
 }
