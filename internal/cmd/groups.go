@@ -215,11 +215,6 @@ func (c *GroupsMembersCmd) Run(ctx context.Context, flags *RootFlags) error {
 	return nil
 }
 
-func isConsumerAccount(account string) bool {
-	account = strings.ToLower(strings.TrimSpace(account))
-	return strings.HasSuffix(account, "@gmail.com") || strings.HasSuffix(account, "@googlemail.com")
-}
-
 // lookupGroupByEmail finds a group by its email address and returns its resource name.
 func lookupGroupByEmail(ctx context.Context, svc *cloudidentity.Service, email string) (string, error) {
 	resp, err := svc.Groups.Lookup().
