@@ -115,7 +115,7 @@ func (c *GmailThreadGetCmd) Run(ctx context.Context, flags *RootFlags) error {
 	}
 
 	// Show message count upfront so users know how many messages to expect
-	u.Out().Printf("Thread contains %d message(s)\n", len(thread.Messages))
+	u.Out().Printf("Thread contains %d message(s)", len(thread.Messages))
 	u.Out().Println("")
 
 	for i, msg := range thread.Messages {
@@ -307,7 +307,7 @@ func (c *GmailThreadAttachmentsCmd) Run(ctx context.Context, flags *RootFlags) e
 		return nil
 	}
 
-	u.Out().Printf("Found %d attachment(s):\n", len(allAttachments))
+	u.Out().Printf("Found %d attachment(s):", len(allAttachments))
 	if c.Download {
 		for _, a := range allAttachments {
 			status := "Saved"
