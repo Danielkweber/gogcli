@@ -574,6 +574,7 @@ type DriveShareCmd struct {
 	FileID       string `arg:"" name:"fileId" help:"File ID"`
 	Anyone       bool   `name:"anyone" help:"Make publicly accessible"`
 	Email        string `name:"email" help:"Share with specific user"`
+	Domain       string `name:"domain" help:"Share with entire domain (e.g. example.com)"`
 	Role         string `name:"role" help:"Permission: reader|writer" default:"reader"`
 	Discoverable bool   `name:"discoverable" help:"Allow file discovery in search (anyone/domain only)"`
 }
@@ -589,8 +590,8 @@ func (c *DriveShareCmd) Run(ctx context.Context, flags *RootFlags) error {
 		return usage("empty fileId")
 	}
 
-	if !c.Anyone && strings.TrimSpace(c.Email) == "" {
-		return usage("must specify --anyone or --email")
+	if !c.Anyone && strings.TrimSpace(c.Email) == "" && strings.TrimSpace(c.Domain) == "" {
+		return usage("must specify --anyone, --email, or --domain")
 	}
 	role := strings.TrimSpace(c.Role)
 	if role == "" {
@@ -608,6 +609,10 @@ func (c *DriveShareCmd) Run(ctx context.Context, flags *RootFlags) error {
 	perm := &drive.Permission{Role: role}
 	if c.Anyone {
 		perm.Type = "anyone"
+		perm.AllowFileDiscovery = c.Discoverable
+	} else if strings.TrimSpace(c.Domain) != "" {
+		perm.Type = "domain"
+		perm.Domain = strings.TrimSpace(c.Domain)
 		perm.AllowFileDiscovery = c.Discoverable
 	} else {
 		perm.Type = "user"
@@ -713,7 +718,7 @@ func (c *DrivePermissionsCmd) Run(ctx context.Context, flags *RootFlags) error {
 
 	call := svc.Permissions.List(fileID).
 		SupportsAllDrives(true).
-		Fields("nextPageToken, permissions(id, type, role, emailAddress)").
+		Fields("nextPageToken, permissions(id, type, role, emailAddress, domain)").
 		Context(ctx)
 	if c.Max > 0 {
 		call = call.PageSize(c.Max)
@@ -744,6 +749,9 @@ func (c *DrivePermissionsCmd) Run(ctx context.Context, flags *RootFlags) error {
 	fmt.Fprintln(w, "ID\tTYPE\tROLE\tEMAIL")
 	for _, p := range resp.Permissions {
 		email := p.EmailAddress
+		if email == "" && p.Domain != "" {
+			email = p.Domain
+		}
 		if email == "" {
 			email = "-"
 		}

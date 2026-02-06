@@ -20,6 +20,11 @@ func TestDriveCommand_ValidationErrors(t *testing.T) {
 	}
 
 	shareCmd = &DriveShareCmd{}
+	if err := runKong(t, shareCmd, []string{"file1", "--domain", "example.com", "--role", "owner"}, context.Background(), flags); err == nil || !strings.Contains(err.Error(), "invalid --role") {
+		t.Fatalf("expected role error for domain share, got %v", err)
+	}
+
+	shareCmd = &DriveShareCmd{}
 	if err := runKong(t, shareCmd, []string{"file1", "--anyone", "--role", "owner"}, context.Background(), flags); err == nil || !strings.Contains(err.Error(), "invalid --role") {
 		t.Fatalf("expected role error, got %v", err)
 	}

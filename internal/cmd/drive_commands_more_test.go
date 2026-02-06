@@ -196,6 +196,11 @@ func TestDriveCommands_MoreCoverage(t *testing.T) {
 		t.Fatalf("unexpected share json: %q", out)
 	}
 
+	out = run("--json", "--account", "a@b.com", "drive", "share", "file1", "--domain", "example.com", "--role", "writer")
+	if !strings.Contains(out, "\"permissionId\"") {
+		t.Fatalf("unexpected domain share json: %q", out)
+	}
+
 	out = run("--force", "--account", "a@b.com", "drive", "unshare", "file1", "perm1")
 	if !strings.Contains(out, "removed") {
 		t.Fatalf("unexpected unshare output: %q", out)
