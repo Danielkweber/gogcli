@@ -777,11 +777,11 @@ gog drive rename <fileId> "New Name"
 gog drive move <fileId> --parent <destinationFolderId>
 gog drive delete <fileId>             # Move to trash
 
-# Permissions
-gog drive permissions <fileId>
-gog drive share <fileId> --email user@example.com --role reader
-gog drive share <fileId> --email user@example.com --role writer
-gog drive unshare <fileId> --permission-id <permissionId>
+	# Permissions
+	gog drive permissions <fileId>
+	gog drive share <fileId> --to user --email user@example.com --role reader
+	gog drive share <fileId> --to user --email user@example.com --role writer
+	gog drive unshare <fileId> --permission-id <permissionId>
 
 # Shared drives (Team Drives)
 gog drive drives --max 100
