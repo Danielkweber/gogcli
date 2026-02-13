@@ -326,6 +326,7 @@ type DriveUploadCmd struct {
 	LocalPath string `arg:"" name:"localPath" help:"Path to local file"`
 	Name      string `name:"name" help:"Override filename"`
 	Parent    string `name:"parent" help:"Destination folder ID"`
+	Convert   bool   `name:"convert" help:"Convert to native Google format (docx→Doc, xlsx→Sheet, pptx→Slides)"`
 }
 
 func (c *DriveUploadCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -364,6 +365,15 @@ func (c *DriveUploadCmd) Run(ctx context.Context, flags *RootFlags) error {
 	parent := strings.TrimSpace(c.Parent)
 	if parent != "" {
 		meta.Parents = []string{parent}
+	}
+
+	if c.Convert {
+		googleMime, ok := googleConvertMimeType(localPath)
+		if !ok {
+			return fmt.Errorf("--convert: unsupported file type %q (supported: docx, xlsx, pptx, doc, xls, ppt, csv, txt, html)", filepath.Ext(localPath))
+		}
+		meta.MimeType = googleMime
+		meta.Name = stripOfficeExt(meta.Name)
 	}
 
 	mimeType := guessMimeType(localPath)
@@ -1110,6 +1120,36 @@ func driveExportExtension(mimeType string) string {
 		return extTXT
 	default:
 		return extPDF
+	}
+}
+
+// googleConvertMimeType returns the Google-native MIME type for convertible
+// Office/text formats. The boolean indicates whether the extension is supported.
+func googleConvertMimeType(path string) (string, bool) {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case extDocx, ".doc":
+		return driveMimeGoogleDoc, true
+	case extXlsx, ".xls", extCSV:
+		return driveMimeGoogleSheet, true
+	case extPptx, ".ppt":
+		return driveMimeGoogleSlides, true
+	case extTXT, ".html":
+		return driveMimeGoogleDoc, true
+	default:
+		return "", false
+	}
+}
+
+// stripOfficeExt removes common Office extensions from a filename so
+// the resulting Google Doc/Sheet/Slides has a clean name.
+func stripOfficeExt(name string) string {
+	ext := strings.ToLower(filepath.Ext(name))
+	switch ext {
+	case extDocx, ".doc", extXlsx, ".xls", extPptx, ".ppt":
+		return strings.TrimSuffix(name, filepath.Ext(name))
+	default:
+		return name
 	}
 }
 

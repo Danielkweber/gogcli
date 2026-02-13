@@ -226,6 +226,16 @@ func TestDriveCommands_MoreCoverage(t *testing.T) {
 		t.Fatalf("unexpected upload json: %q", out)
 	}
 
+	// Upload with --convert
+	docxTmp := filepath.Join(t.TempDir(), "report.docx")
+	if err := os.WriteFile(docxTmp, []byte("docx-data"), 0o600); err != nil {
+		t.Fatalf("write temp: %v", err)
+	}
+	out = run("--json", "--account", "a@b.com", "drive", "upload", docxTmp, "--convert")
+	if !strings.Contains(out, "\"file\"") {
+		t.Fatalf("unexpected upload --convert json: %q", out)
+	}
+
 	out = run("--account", "a@b.com", "drive", "mkdir", "Folder")
 	if !strings.Contains(out, "id") {
 		t.Fatalf("unexpected mkdir output: %q", out)
