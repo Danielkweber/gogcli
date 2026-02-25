@@ -22,18 +22,22 @@ import (
 var newDocsService = googleapi.NewDocs
 
 type DocsCmd struct {
-	Export      DocsExportCmd      `cmd:"" name:"export" aliases:"download,dl" help:"Export a Google Doc (pdf|docx|txt)"`
-	Info        DocsInfoCmd        `cmd:"" name:"info" aliases:"get,show" help:"Get Google Doc metadata"`
-	Create      DocsCreateCmd      `cmd:"" name:"create" aliases:"add,new" help:"Create a Google Doc"`
-	Copy        DocsCopyCmd        `cmd:"" name:"copy" aliases:"cp,duplicate" help:"Copy a Google Doc"`
-	Cat         DocsCatCmd         `cmd:"" name:"cat" aliases:"text,read" help:"Print a Google Doc as plain text"`
-	Comments    DocsCommentsCmd    `cmd:"" name:"comments" help:"Manage comments on a Google Doc"`
-	ListTabs    DocsListTabsCmd    `cmd:"" name:"list-tabs" help:"List all tabs in a Google Doc"`
-	Write       DocsWriteCmd       `cmd:"" name:"write" help:"Write content to a Google Doc"`
-	Insert      DocsInsertCmd      `cmd:"" name:"insert" help:"Insert text at a specific position"`
-	Delete      DocsDeleteCmd      `cmd:"" name:"delete" help:"Delete text range from document"`
-	FindReplace DocsFindReplaceCmd `cmd:"" name:"find-replace" help:"Find and replace text in document"`
-	Update      DocsUpdateCmd      `cmd:"" name:"update" help:"Update content in a Google Doc"`
+	Export          DocsExportCmd      `cmd:"" name:"export" aliases:"download,dl" help:"Export a Google Doc (pdf|docx|txt)"`
+	Info            DocsInfoCmd        `cmd:"" name:"info" aliases:"get,show" help:"Get Google Doc metadata"`
+	Create          DocsCreateCmd      `cmd:"" name:"create" aliases:"add,new" help:"Create a Google Doc"`
+	Copy            DocsCopyCmd        `cmd:"" name:"copy" aliases:"cp,duplicate" help:"Copy a Google Doc"`
+	Cat             DocsCatCmd         `cmd:"" name:"cat" aliases:"text,read" help:"Print a Google Doc as plain text"`
+	Comments        DocsCommentsCmd    `cmd:"" name:"comments" help:"Manage comments on a Google Doc"`
+	ListTabs        DocsListTabsCmd    `cmd:"" name:"list-tabs" help:"List all tabs in a Google Doc"`
+	Write           DocsWriteCmd       `cmd:"" name:"write" help:"Write content to a Google Doc"`
+	Insert          DocsInsertCmd      `cmd:"" name:"insert" help:"Insert text at a specific position"`
+	Delete          DocsDeleteCmd      `cmd:"" name:"delete" help:"Delete text range from document"`
+	FindReplace     DocsFindReplaceCmd `cmd:"" name:"find-replace" help:"Find and replace text in document"`
+	Update          DocsUpdateCmd      `cmd:"" name:"update" help:"Update content in a Google Doc"`
+	Structure       DocsStructureCmd   `cmd:"" name:"structure" aliases:"struct" help:"Show document structure with numbered paragraphs"`
+	EditParagraph   DocsEditParaCmd    `cmd:"" name:"edit" help:"Edit a paragraph by number"`
+	InsertParagraph DocsInsertParaCmd  `cmd:"" name:"insert-paragraph" aliases:"insert-para" help:"Insert a new paragraph after a given paragraph number"`
+	RemoveParagraph DocsRemoveParaCmd  `cmd:"" name:"remove-paragraph" aliases:"remove-para" help:"Remove a paragraph by number"`
 }
 type DocsExportCmd struct {
 	DocID  string         `arg:"" name:"docId" help:"Doc ID"`
@@ -271,6 +275,7 @@ type DocsCatCmd struct {
 	MaxBytes int64  `name:"max-bytes" help:"Max bytes to read (0 = unlimited)" default:"2000000"`
 	Tab      string `name:"tab" help:"Tab title or ID to read (omit for default behavior)"`
 	AllTabs  bool   `name:"all-tabs" help:"Show all tabs with headers"`
+	Numbered bool   `name:"numbered" short:"N" help:"Prefix each paragraph with its number"`
 }
 
 func (c *DocsCatCmd) Run(ctx context.Context, flags *RootFlags) error {
@@ -306,6 +311,10 @@ func (c *DocsCatCmd) Run(ctx context.Context, flags *RootFlags) error {
 	}
 	if doc == nil {
 		return errors.New("doc not found")
+	}
+
+	if c.Numbered {
+		return c.printNumbered(ctx, doc, "")
 	}
 
 	text := docsPlainText(doc, c.MaxBytes)
@@ -512,6 +521,9 @@ func (c *DocsCatCmd) runWithTabs(ctx context.Context, svc *docs.Service, id stri
 		tab := findTab(tabs, c.Tab)
 		if tab == nil {
 			return fmt.Errorf("tab not found: %s", c.Tab)
+		}
+		if c.Numbered {
+			return c.printNumbered(ctx, doc, c.Tab)
 		}
 		text := tabPlainText(tab, c.MaxBytes)
 		if outfmt.IsJSON(ctx) {
@@ -946,6 +958,98 @@ func (c *DocsFindReplaceCmd) Run(ctx context.Context, flags *RootFlags) error {
 	u.Out().Printf("find\t%s", c.Find)
 	u.Out().Printf("replace\t%s", c.ReplaceText)
 	u.Out().Printf("replacements\t%d", replacements)
+	return nil
+}
+
+// --- Structure / Numbered commands ---
+
+type DocsStructureCmd struct {
+	DocID string `arg:"" name:"docId" help:"Doc ID"`
+	Tab   string `name:"tab" help:"Tab title or ID (omit for default)"`
+}
+
+func (c *DocsStructureCmd) Run(ctx context.Context, flags *RootFlags) error {
+	u := ui.FromContext(ctx)
+	account, err := requireAccount(flags)
+	if err != nil {
+		return err
+	}
+
+	id := strings.TrimSpace(c.DocID)
+	if id == "" {
+		return usage("empty docId")
+	}
+
+	svc, err := newDocsService(ctx, account)
+	if err != nil {
+		return err
+	}
+
+	getCall := svc.Documents.Get(id)
+	if c.Tab != "" {
+		getCall = getCall.IncludeTabsContent(true)
+	}
+	doc, err := getCall.Context(ctx).Do()
+	if err != nil {
+		if isDocsNotFound(err) {
+			return fmt.Errorf("doc not found or not a Google Doc (id=%s)", id)
+		}
+		return err
+	}
+	if doc == nil {
+		return errors.New("doc not found")
+	}
+
+	pm, err := buildParagraphMap(doc, c.Tab)
+	if err != nil {
+		return err
+	}
+
+	if outfmt.IsJSON(ctx) {
+		return outfmt.WriteJSON(ctx, os.Stdout, pm)
+	}
+
+	u.Out().Printf(" #  TYPE                CONTENT")
+	for _, p := range pm.Paragraphs {
+		prefix := ""
+		if p.IsBullet {
+			prefix = strings.Repeat("  ", p.NestLevel) + "* "
+		}
+
+		text := p.Text
+		if len(text) > 60 {
+			text = text[:57] + "..."
+		}
+
+		if p.ElemType == "table" {
+			text = fmt.Sprintf("[table %dx%d] %s", p.TableRows, p.TableCols, text)
+		}
+
+		u.Out().Printf("%2d  %-18s  %s%s", p.Num, p.Type, prefix, text)
+	}
+	return nil
+}
+
+// printNumbered prints document content with [N] paragraph number prefixes.
+func (c *DocsCatCmd) printNumbered(ctx context.Context, doc *docs.Document, tabID string) error {
+	pm, err := buildParagraphMap(doc, tabID)
+	if err != nil {
+		return err
+	}
+
+	if outfmt.IsJSON(ctx) {
+		return outfmt.WriteJSON(ctx, os.Stdout, pm)
+	}
+
+	for _, p := range pm.Paragraphs {
+		text := p.Text
+		if p.ElemType == "table" {
+			text = fmt.Sprintf("[table %dx%d] %s", p.TableRows, p.TableCols, text)
+		}
+		if _, err := fmt.Fprintf(os.Stdout, "[%d] %s\n", p.Num, text); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
